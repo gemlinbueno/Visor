@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Pista de Tenis</title>
+    <style>
+        body {
+            margin: 0;
+            background-color: black;
+            color: white;
+            font-family: sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        canvas {
+            margin: 10px;
+            border: 1px solid yellow;
+        }
+
+        h1#tituloPista {
+            color: yellow;
+            text-align: center;
+            margin: 10px 0;
+        }
+
+        #panelCamara {
+            margin: 10px;
+        }
+
+        #panelCamara input {
+            padding: 5px;
+            font-size: 16px;
+            width: 80px;
+        }
+
+        #panelCamara button {
+            padding: 5px 10px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+
+    <canvas id="tenisCanvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById("tenisCanvas");
+        const ctx = canvas.getContext("2d");
+
+        const escala = 0.33;
+        const anchoOriginal = 848;
+        const altoOriginal = 512;
+        const anchoPistaRealCm = 1097; // pista de dobles
+
+        const escalaReal = (anchoOriginal * escala) / anchoPistaRealCm;
+
+
+
+        canvas.width = anchoOriginal * escala;
+        canvas.height = altoOriginal * escala;
+
+        const xMin = 228 * escala, xMax = 622 * escala;
+        const yDoblesTop = 165 * escala, ySinglesTop = 188 * escala;
+        const yCentro = 256 * escala;
+        const ySinglesBottom = 323 * escala, yDoblesBottom = 346 * escala;
+
+        const medioX = (xMin + xMax) / 2;
+        // Cambiar las líneas de servicio a las nuevas posiciones en X
+        const serviceLeftX = 319 * escala;   // Establecer la línea de servicio izquierda en X = 319
+        const serviceRightX = 531 * escala;  // Establecer la línea de servicio derecha en X = 531
+        const midServiceY = (ySinglesTop + ySinglesBottom) / 2;
+
+        const camarasDobles = [2, 7, 8, 13, 16, 21, 22, 27, 28, 29, 30, 31, 40, 41, 42, 43];
+
+        const camaras = {
+            0: [xMin / escala - 1, 165 - 150], 2: [xMin / escala - 1, 165 - 125],
+            3: [xMin / escala + 100, 165 - 150], 4: [xMax / escala - 100, 165 - 150],
+            5: [xMax / escala - 1, 165 - 150], 7: [xMax / escala - 1, 165 - 125],
+
+            19: [xMin / escala - 1, 346 + 150], 21: [xMin / escala - 1, 346 + 125],
+            17: [xMax / escala - 100, 346 + 150], 18: [xMin / escala + 100, 346 + 150],
+            14: [xMax / escala - 1, 346 + 150], 16: [xMax / escala - 1, 346 + 125],
+
+            8: [xMax / escala + 210, 165 + 2], 9: [xMax / escala + 210, 165 + 25],
+            10: [xMax / escala + 210, 256 - 10], 11: [xMax / escala + 210, 256 + 10],
+            12: [xMax / escala + 210, 346 - 25], 13: [xMax / escala + 210, 346 - 2],
+
+            27: [xMin / escala - 210, 165 + 2], 26: [xMin / escala - 210, 165 + 25],
+            25: [xMin / escala - 210, 256 - 10], 24: [xMin / escala - 210, 256 + 10],
+            22: [xMin / escala - 210, 346 - 2], 23: [xMin / escala - 210, 346 - 25],
+
+            28: [xMin / escala + 180, 165 + 2], 29: [xMin / escala + 150, 165 + 2],
+            30: [xMax / escala - 180, 165 + 2], 31: [xMax / escala - 150, 165 + 2],
+
+            32: [xMin / escala + 180, 165 + 25], 33: [xMin / escala + 150, 165 + 25],
+            34: [xMax / escala - 180, 165 + 25], 35: [xMax / escala - 150, 165 + 25],
+
+            36: [xMin / escala + 180, 346 - 25], 37: [xMin / escala + 150, 346 - 25],
+            38: [xMax / escala - 180, 346 - 25], 39: [xMax / escala - 150, 346 - 25],
+
+            40: [xMin / escala + 180, 346 - 2], 41: [xMin / escala + 150, 346 - 2],
+            42: [xMax / escala - 180, 346 - 2], 43: [xMax / escala - 150, 346 - 2],
+        };
+
+        function dibujarPista(titulo = "", xCoord = null, yCoord = null) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            ctx.strokeStyle = "white";
+            ctx.lineWidth = 2;
+            ctx.strokeRect(xMin, yDoblesTop, xMax - xMin, yDoblesBottom - yDoblesTop);
+
+            if (xCoord !== null) {
+                ctx.fillStyle = "yellow";
+                ctx.font = `${45 * escala}px Arial`;
+                ctx.textAlign = "right"; // Alineación derecha
+                ctx.textBaseline = "top"; // Parte superior
+                ctx.fillText(`X: ${xCoord}`, canvas.width - 5, 5); // Esquina superior derecha
+            }
+
+            if (yCoord !== null) {
+                ctx.fillStyle = "yellow";
+                ctx.font = `${45 * escala}px Arial`;
+                ctx.textAlign = "left"; // Alineación izquierda
+                ctx.textBaseline = "bottom"; // Parte inferior
+                ctx.fillText(`Y: ${yCoord}`, 5, canvas.height - 5); // Esquina inferior izquierda
+            }
+
+            ctx.beginPath();
+            ctx.moveTo(xMin, ySinglesTop); ctx.lineTo(xMax, ySinglesTop);
+            ctx.moveTo(xMin, ySinglesBottom); ctx.lineTo(xMax, ySinglesBottom);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(medioX, yDoblesTop); ctx.lineTo(medioX, yDoblesBottom);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(serviceLeftX, ySinglesTop); ctx.lineTo(serviceLeftX, ySinglesBottom);
+            ctx.moveTo(serviceRightX, ySinglesTop); ctx.lineTo(serviceRightX, ySinglesBottom);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(serviceLeftX, midServiceY); ctx.lineTo(serviceRightX, midServiceY);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(medioX, ySinglesTop); ctx.lineTo(medioX, ySinglesBottom);
+            ctx.stroke();
+
+            dibujarNumerosCuadrantes();
+            dibujarCamaras();
+        }
+
+        function dibujarNumerosCuadrantes() {
+            ctx.fillStyle = "yellow";
+            ctx.font = `${55 * escala}px Arial`;
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+
+            const cx1 = (medioX + serviceRightX) / 2;
+            const cx2 = (serviceLeftX + medioX) / 2;
+            const cyTop = (ySinglesTop + midServiceY) / 2;
+            const cyBottom = (midServiceY + ySinglesBottom) / 2;
+
+            ctx.fillText("1", cx2, cyTop);  // antes 3
+            ctx.fillText("3", cx1, cyTop);  // antes 1
+            ctx.fillText("2", cx2, cyBottom);  // antes 4
+            ctx.fillText("4", cx1, cyBottom);  // antes 2
+
+        }
+
+        function dibujarCamaras() {
+            for (const [numStr, [xOrig, yOrig]] of Object.entries(camaras)) {
+                const num = parseInt(numStr);
+                const color = camarasDobles.includes(num) ? "steelblue" : "purple";
+
+                const x = xOrig * escala;
+                const y = yOrig * escala;
+
+                ctx.beginPath();
+                ctx.fillStyle = color;
+                ctx.arc(x, y, 10 * escala, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = "white";
+                ctx.font = `${30 * escala}px Arial`;
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.fillText(num, x, y);
+            }
+        }
+
+
+        function resaltarZona(x1, y1, x2, y2) {
+            ctx.fillStyle = "rgba(255, 255, 0, 0.5)";
+            ctx.fillRect(x1, y1, x2 - x1, y2 - y1);
+        }
+
+        function obtenerTituloPorEstado(estado) {
+            switch (estado) {
+                case 0: return "Area Simples";
+                case 1: return "Area Dobles";
+                case 2: return "Saque 1 a 4";
+                case 3: return "Saque 2 a 3";
+                case 4: return "Saque 3 a 2";
+                case 5: return "Saque 4 a 1";
+                default: return "Pista de Tenis";
+            }
+        }
+
+
+        function aplicarEstado(estado) {
+            switch (estado) {
+                case 0: // Simples
+                    resaltarZona(xMin, ySinglesTop, xMax, ySinglesBottom);
+                    break;
+                case 1: // Dobles
+                    resaltarZona(xMin, yDoblesTop, xMax, yDoblesBottom);
+                    break;
+                case 2: // Saque 1 a 4
+                    resaltarZona(medioX, midServiceY, serviceRightX, ySinglesBottom);
+                    //resaltarZona(serviceLeftX, ySinglesTop, medioX, midServiceY);
+                    break;
+                case 3: // Saque 2 a 3
+                    resaltarZona(medioX, ySinglesTop, serviceRightX, midServiceY);
+                    break;
+                case 4: // Saque 3 a 2
+                    resaltarZona(serviceLeftX, midServiceY, medioX, ySinglesBottom);
+                    break;
+                case 5: // Saque 4 a 1
+                    resaltarZona(serviceLeftX, ySinglesTop, medioX, midServiceY);
+                    //resaltarZona(medioX, midServiceY, serviceRightX, ySinglesBottom);
+                    break;
+            }
+        }
+
+
+
+        function getParams() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const x = parseInt(urlParams.get("x"));
+            const y = parseInt(urlParams.get("y"));
+            const estado = parseInt(urlParams.get("estado"));
+            const camarasStr = urlParams.get("camaras");
+            const camarasInvolucradas = camarasStr ? camarasStr.split(",").map(num => parseInt(num)) : [];
+            return [x, y, estado, camarasInvolucradas];
+        }
+
+
+
+
+        const zonasDisparo = {
+            0: [610, 634, 179, 355],
+            2: [610, 634, 156, 254],
+            3: [519, 542, 179, 332],
+            4: [307, 331, 179, 332],
+            5: [216, 240, 179, 355],
+            7: [216, 240, 156, 254],
+            8: [216, 423, 156, 174],
+            9: [216, 423, 179, 197],
+            10: [307, 423, 247, 265],
+            11: [307, 423, 247, 265],
+            12: [216, 423, 314, 332],
+            13: [216, 423, 337, 355],
+            14: [216, 240, 156, 332],
+            16: [216, 240, 255, 355],
+            17: [307, 331, 179, 332],
+            18: [519, 542, 179, 332],
+            19: [610, 634, 156, 332],
+            21: [610, 634, 255, 355],
+            22: [425, 634, 377, 355],
+            23: [425, 634, 314, 332],
+            24: [425, 542, 247, 265],
+            25: [425, 542, 247, 265],
+            26: [425, 634, 179, 197],
+            27: [425, 634, 156, 174],
+            28: [425, 609, 156, 174],
+            29: [469, 634, 156, 174],
+            30: [241, 423, 156, 174],
+            31: [216, 379, 156, 174],
+            32: [425, 609, 179, 197],
+            33: [469, 634, 179, 197],
+            34: [241, 423, 179, 197],
+            35: [216, 379, 179, 197],
+            36: [425, 609, 314, 332],
+            37: [469, 634, 314, 332],
+            38: [241, 423, 314, 332],
+            39: [216, 379, 314, 332],
+            40: [425, 609, 337, 355],
+            41: [469, 634, 337, 355],
+            42: [241, 423, 337, 355],
+            43: [216, 379, 337, 355]
+        };
+
+        function senalarCamarasInvolucradas(listaNumeros) {
+            for (const numero of listaNumeros) {
+                if (!(numero in camaras)) continue;
+                const [x, y] = camaras[numero].map(coord => coord * escala);
+
+                // Dibuja círculo verde alrededor de la cámara
+                ctx.beginPath();
+                ctx.strokeStyle = "green";
+                ctx.lineWidth = 4;
+                ctx.arc(x, y, 20 * escala, 0, Math.PI * 2);
+                ctx.stroke();
+
+                // Dibuja la zona de disparo resaltada
+                if (numero in zonasDisparo) {
+
+                    const [x_min_orig, x_max_orig, y_min, y_max] = zonasDisparo[numero];
+
+                    // Invertir las coordenadas en X:
+                    const x_min = anchoOriginal - x_max_orig;
+                    const x_max = anchoOriginal - x_min_orig;
+
+                    // Escalar después
+                    const rectX = x_min * escala;
+                    const rectY = y_min * escala;
+                    const rectWidth = (x_max - x_min) * escala;
+                    const rectHeight = (y_max - y_min) * escala;
+
+                    ctx.fillStyle = "rgba(0, 255, 0, 0.3)"; // verde transparente
+                    ctx.fillRect(rectX, rectY, rectWidth, rectHeight);
+
+                     // Como las coordenadas originales parecen en sistema invertido, ajustar:
+                     // El sistema del canvas está escalado, y la pista invertida en Y y X para el punto (en dibujarPunto)
+                     // Pero las zonas se dibujan directamente, así que solo escalar:
+                }
+            }
+        }
+
+
+
+        function dibujarPunto(x, y) {
+            const radius = 12 * escala;
+
+
+            const xInvertido = anchoOriginal - x;
+            const yNormal = y;  // sin invertir
+
+            ctx.beginPath();
+            ctx.fillStyle = "red";
+            ctx.arc(xInvertido * escala, yNormal * escala, radius, 0, Math.PI * 2);
+            ctx.fill();
+
+        }
+
+
+        window.onload = () => {
+            const [x, y, estado, camarasInvolucradas] = getParams();
+            const titulo = obtenerTituloPorEstado(estado);
+            dibujarPista(titulo, x, y);
+            if (!isNaN(estado)) aplicarEstado(estado);
+            if (camarasInvolucradas.length > 0) senalarCamarasInvolucradas(camarasInvolucradas);
+            if (!isNaN(x) && !isNaN(y)) dibujarPunto(x, y); // Mover esto al final
+        };
+
+
+        canvas.onclick = () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const x = urlParams.get("x");
+            const y = urlParams.get("y");
+            const estado = urlParams.get("estado");
+            const camaras = urlParams.get("camaras") || "";
+
+            const url = `pista_grande.html?x=${encodeURIComponent(x)}&y=${encodeURIComponent(y)}&estado=${encodeURIComponent(estado)}&camaras=${encodeURIComponent(camaras)}`;
+            window.open(url, "_blank");
+        };
+
+
+    </script>
+</body>
+
+</html>
