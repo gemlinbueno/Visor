@@ -1,0 +1,1560 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Visor de Datos de Botes</title>
+  <!-- Importa la hoja de estilos de DataTables -->
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+  <style>
+    /* Estilos para la página */
+    body {
+      font-family: sans-serif;
+      margin: 40px;
+    }
+
+    table {
+      width: 100%;
+      margin-top: 20px;
+    }
+
+    th,
+    td {
+      text-align: left;
+      vertical-align: top;
+      padding: 8px;
+    }
+
+    input[type="file"] {
+      margin-bottom: 20px;
+    }
+
+    .column-toggles label {
+      margin-right: 15px;
+      font-size: 0.9em;
+    }
+
+    .column-toggles {
+      margin-bottom: 10px;
+    }
+
+    th.subrayado-azul {
+      text-decoration: underline;
+      color: blue;
+    }
+
+    th.subrayado-rosa {
+      text-decoration: underline;
+      color: pink;
+    }
+
+    small {
+      font-size: 0.75em;
+      color: #333;
+    }
+
+    .in {
+      background-color: green;
+      color: white;
+    }
+
+    .out {
+      background-color: red;
+      color: white;
+      padding: 3px 5px;
+      border-radius: 5px;
+    }
+
+    .out-red {
+      background-color: red;
+      color: white;
+      padding: 3px 5px;
+      border-radius: 5px;
+    }
+
+    .nc {
+      background-color: blue;
+      color: white;
+      padding: 4px 4px;
+      /* Aumenta espacio interno */
+      border-radius: 4px;
+      /* Esquinas redondeadas opcional */
+      font-weight: bold;
+      /* Negrita si quieres */
+      display: inline-block;
+      /* Asegura que el padding se aplique correctamente */
+
+    }
+
+    .o {
+      background-color: red;
+      color: white;
+      padding: 4px 4px;
+      border-radius: 4px;
+      font-weight: bold;
+      display: inline-block;
+
+    }
+
+    .i {
+      background-color: green;
+      color: white;
+      padding: 4px 4px;
+      border-radius: 4px;
+      font-weight: bold;
+      display: inline-block;
+    }
+
+    .t {
+      background-color: yellow;
+    }
+
+    .d {
+      background-color: black;
+      color: white;
+      padding: 4px 4px;
+      border-radius: 4px;
+      font-weight: bold;
+      display: inline-block;
+    }
+
+    /* Contenedor para los botones */
+    .button-container {
+      display: flex;
+      justify-content: space-between;
+      margin: 10px 0;
+    }
+
+    /* Estilo para los botones */
+    button.left-button,
+    button.right-button {
+      width: 48%;
+      /* Cada botón ocupa el 50% del espacio */
+      background-color: #4CAF50;
+      color: white;
+      padding: 10px 0;
+      font-size: 14px;
+      border: none;
+      cursor: pointer;
+      border-radius: 5px;
+    }
+
+    button.left-button:hover,
+    button.right-button:hover {
+      background-color: #45a049;
+      /* Efecto hover */
+    }
+
+    /*Unico boton*/
+    /* Contenedor para los botones */
+    .button-container {
+      display: flex;
+      justify-content: center;
+      margin: 10px 0;
+    }
+
+
+
+    /* Estilo para la información oculta */
+    .hidden-info {
+      margin-top: 10px;
+      padding: 10px;
+      background-color: #2c3e50;
+      color: white;
+      border-radius: 8px;
+      display: none;
+      /* Inicialmente oculta */
+      font-size: 12px;
+      /* Reducción del tamaño de la fuente */
+    }
+
+
+
+    /* Estilo para los botones */
+    button.info-button {
+      background-color: #4CAF50;
+      color: white;
+      padding: 10px 20px;
+      font-size: 14px;
+      /* Mantener tamaño de fuente para los botones */
+      border: none;
+      cursor: pointer;
+      border-radius: 5px;
+    }
+
+    button.info-button:hover {
+      background-color: #45a049;
+      /* Efecto hover */
+    }
+
+    #backToTop {
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      width: 44px;
+      height: 44px;
+      border: none;
+      border-radius: 999px;
+      font-size: 18px;
+      line-height: 44px;
+      text-align: center;
+      cursor: pointer;
+      background: rgba(0, 0, 0, .65);
+      color: #fff;
+
+      box-shadow: 0 8px 24px rgba(0, 0, 0, .25);
+      z-index: 10000;
+      /* por encima de la tabla y casi todo */
+      opacity: 0;
+      /* oculto por defecto */
+      visibility: hidden;
+      transform: translateY(8px);
+      /* pequeña animación de aparición */
+      transition: opacity .2s ease, transform .2s ease, visibility 0s .2s;
+    }
+
+    #backToTop:hover {
+      background: rgba(0, 0, 0, .8);
+    }
+
+    #backToTop.is-visible {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
+      transition: opacity .2s ease, transform .2s ease;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Título de la página -->
+  <h2 style="display: flex; align-items: center; gap: 10px;">
+    Visor Interactivo de Datos de Botes
+    <input type="checkbox" id="toggleGuru" title="Mostrar filtros"> <!-- sin texto, con tooltip opcional -->
+  </h2>
+
+  <label style="margin-left:10px;">
+    <input type="checkbox" id="toggleMapaLigero" checked>
+    Mostrar botón (no iframe)
+  </label>
+
+
+  <!-- Entrada para seleccionar el archivo -->
+  <input type="file" id="fileInput" accept=".txt">
+
+  <div id="guruFilters" style="display: none;">
+
+    <div id="columnToggles" class="column-toggles"></div>
+
+    <div id="estadoLaserFilters">
+      <label><strong>Estado Laser:</strong></label><br>
+    </div>
+
+
+    <!-- Filtros por Resultado H y V -->
+    <div id="resultadoFilters" style="margin-top: 20px;">
+      <strong>Filtrar por Resultado H:</strong><br>
+      <div id="resultadoHCheckboxes"></div>
+
+      <strong>Filtrar por Resultado V:</strong><br>
+      <div id="resultadoVCheckboxes"></div>
+    </div>
+
+
+    <!-- Filtro de cámaras H1 -->
+    <div id="camFiltersH" style="margin-top: 10px; margin-bottom: 10px;">
+      <strong>Filtrar por Cámara H:</strong><br>
+      <div id="camCheckboxesH"></div>
+    </div>
+
+    <div>
+      <label><input type="checkbox" id="masterCheckboxH"> Seleccionar todo H</label>
+      <div id="camCheckboxesH"></div>
+    </div>
+
+    <!-- Filtro de cámaras V1 -->
+    <div id="camFiltersV" style="margin-top: 10px; margin-bottom: 10px;">
+      <strong>Filtrar por Cámara V:</strong><br>
+      <div id="camCheckboxesV"></div>
+    </div>
+
+    <div>
+      <label><input type="checkbox" id="masterCheckboxV"> Seleccionar todo V</label>
+      <div id="camCheckboxesV"></div>
+    </div>
+
+    <div id="camCheckboxesH1" style="margin-top: 10px; margin-bottom: 10px;">
+      <strong>Filtrar por Cámara H1:</strong><br>
+      <div id="camCheckboxesH1"></div>
+    </div>
+    <div id="camCheckboxesH2" style="margin-top: 10px; margin-bottom: 10px;">
+      <strong>Filtrar por Cámara H2:</strong><br>
+      <div id="camCheckboxesH2"></div>
+    </div>
+    <div id="camCheckboxesH3" style="margin-top: 10px; margin-bottom: 10px;">
+      <strong>Filtrar por Cámara H3:</strong><br>
+      <div id="camCheckboxesH3"></div>
+    </div>
+
+    <div id="camFiltersV1" style="margin-top: 10px; margin-bottom: 10px;">
+      <strong>Filtrar por Cámara V1:</strong><br>
+      <div id="camCheckboxesV1"></div>
+    </div>
+    <div id="camFiltersV2" style="margin-top: 10px; margin-bottom: 10px;">
+      <strong>Filtrar por Cámara V2:</strong><br>
+      <div id="camCheckboxesV2"></div>
+    </div>
+    <div id="camFiltersV3" style="margin-top: 10px; margin-bottom: 10px;">
+      <strong>Filtrar por Cámara V3:</strong><br>
+      <div id="camCheckboxesV3"></div>
+    </div>
+
+    <div id="filterColors">
+      <label><input type="checkbox" id="filterGreen" checked> Verde</label>
+      <label><input type="checkbox" id="filterRed" checked> Rojo</label>
+    </div>
+
+
+    <div>
+      <strong>Filtrar por Zonas:</strong><br>
+      <div id="zoneFilters"></div>
+    </div>
+  </div>
+
+  <!-- Tabla donde se mostrarán los datos -->
+  <table id="dataTable" class="display">
+    <thead>
+      <tr>
+        <th>Identificador</th>
+        <th>Mapa</th>
+        <th class="subrayado-rosa">Pos X</th>
+        <th class="subrayado-azul">Pos Y</th>
+        <th>Estado</th>
+        <th>Cámara H 1</th>
+        <th>Cámara H 2</th>
+        <th>Cámara H 3</th>
+        <th>Cámara V 1</th>
+        <th>Cámara V 2</th>
+        <th>Cámara V 3</th>
+        <th>G (A,B)</th>
+        <th class="subrayado-azul">Resultado H</th>
+        <th class="subrayado-rosa">Resultado V</th>
+        <th>TEMPS</th>
+        <th>TEMPS_LASER</th>
+        <th class="subrayado-azul">Vertical Laser V</th>
+        <th class="subrayado-rosa">Resultado Laser H</th>
+        <th>Estado Laser</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <!-- Modal para mostrar el mapa -->
+  <div id="mapaModal"
+    style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); align-items:center; justify-content:center; z-index:9999;">
+    <div
+      style="width: 1300px; height: 850px; background:#fff; border-radius:8px; box-shadow:0 10px 30px rgba(0,0,0,.2); display:flex; flex-direction:column;">
+      <div style="padding:8px; text-align:right; border-bottom:1px solid #eee;">
+        <button id="cerrarMapa" style="padding:6px 10px;">Cerrar</button>
+      </div>
+      <iframe id="mapaFrame" style="flex:1; width:100%; border:0;"></iframe>
+    </div>
+  </div>
+
+
+  <!-- Carga las bibliotecas necesarias -->
+  <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+
+
+  <script>
+
+    document.getElementById('toggleGuru').addEventListener('change', function () {
+      const showFilters = this.checked;
+      document.getElementById('guruFilters').style.display = showFilters ? 'block' : 'none';
+    });
+
+
+
+    // Variables globales
+    let dataTable;
+
+    // Control global de la columna "Mapa"
+    let usarBotonMapa = true;
+    document.addEventListener('change', (e) => {
+      if (e.target && e.target.id === 'toggleMapaLigero') {
+        usarBotonMapa = e.target.checked;
+        drawDebounced();
+      }
+    });
+
+
+    // Helper debounce para evitar redibujos encadenados
+    const drawDebounced = (() => {
+      let t;
+      return () => {
+        clearTimeout(t);
+        t = setTimeout(() => {
+          if ($.fn.dataTable.isDataTable('#dataTable')) {
+            $('#dataTable').DataTable().draw(false); // false = no resetear página
+          }
+        }, 80);
+      };
+    })();
+
+
+    // Nombres de las columnas en la tabla
+    const columnNames = [
+      "Identificador", "Mapa", "Pos X", "Pos Y", "Estado",
+      "Cámara H 1", "Cámara H 2", "Cámara H 3",
+      "Cámara V 1", "Cámara V 2", "Cámara V 3",
+      "G (A,B)", "Resultado H", "Resultado V",
+      "TEMPS", "TEMPS_LASER",
+      "Vertical Laser V", "Resultado Laser H",
+      "Estado Laser",
+      "__map_btn",     // ← NUEVA oculta
+      "__map_iframe",  // ← NUEVA oculta
+      "__color" // ← NUEVA oculta
+    ];
+
+
+    // Mapa de estados
+    const estadoMap = {
+      "0": "0 – Simples", "1": "1 – Dobles", "2": "2 – Saque 1 a 4",
+      "3": "3 – Saque 2 a 3", "4": "4 – Saque 3 a 2", "5": "5 – Saque 4 a 1"
+    };
+
+    // Mapa de valores AB
+    const ABValues = {
+      "0": "No aplica", "1": "OUT (1 cámara implicada)", "2": "OUT (2 cámaras implicadas)",
+      "3": "OUT (3 cámaras implicadas)", "5": "OUT (solo por láser con disparo de cámaras)",
+      "9": "OUT solo por láser (sin cámaras)", "-1": "IN (1 cámara implicada)",
+      "-2": "IN (2 cámaras implicadas)", "-3": "IN (3 cámaras implicadas)",
+      "-5": "IN (solo por láser con disparo de cámaras)", "-10": "No se puede dar resultado (IN por defecto)"
+    };
+
+    const abKeys = Object.keys(ABValues);
+
+    // Set de filtros activos
+    const resultadoHActive = new Set();
+    const resultadoVActive = new Set();
+
+    // Crear los checkboxes para Resultado H y V
+    function crearResultadoCheckboxes() {
+      const contH = document.getElementById("resultadoHCheckboxes");
+      const contV = document.getElementById("resultadoVCheckboxes");
+
+      abKeys.forEach(key => {
+        const labelH = document.createElement("label");
+        const cbH = document.createElement("input");
+        cbH.type = "checkbox";
+        cbH.value = key;
+        cbH.addEventListener("change", () => {
+          if (cbH.checked) resultadoHActive.add(key);
+          else resultadoHActive.delete(key);
+          drawDebounced();
+        });
+        labelH.appendChild(cbH);
+        labelH.appendChild(document.createTextNode(` ${key}: ${ABValues[key]}`));
+        labelH.style.marginRight = "10px";
+        contH.appendChild(labelH);
+
+        const labelV = document.createElement("label");
+        const cbV = document.createElement("input");
+        cbV.type = "checkbox";
+        cbV.value = key;
+        cbV.addEventListener("change", () => {
+          if (cbV.checked) resultadoVActive.add(key);
+          else resultadoVActive.delete(key);
+          drawDebounced();
+        });
+        labelV.appendChild(cbV);
+        labelV.appendChild(document.createTextNode(` ${key}: ${ABValues[key]}`));
+        labelV.style.marginRight = "10px";
+        contV.appendChild(labelV);
+      });
+    }
+
+    const estadoLaserValues = [10, 11, 12, 13, 14, 15, 16, 17, 18]; // Puedes ajustar según los valores reales posibles
+    const estadoLaserActive = new Set();
+
+    function crearEstadoLaserCheckboxes() {
+      const container = document.getElementById("estadoLaserFilters");
+
+      estadoLaserValues.forEach(val => {
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.value = val;
+        checkbox.checked = false;
+        checkbox.addEventListener("change", () => {
+          if (checkbox.checked) estadoLaserActive.add(val.toString());
+          else estadoLaserActive.delete(val.toString());
+          drawDebounced();
+        });
+
+        const label = document.createElement("label");
+        label.style.marginRight = "10px";
+        label.appendChild(checkbox);
+        label.appendChild(document.createTextNode(` ${val}`));
+        container.appendChild(label);
+      });
+    }
+
+    crearEstadoLaserCheckboxes();
+
+
+    // Llama esta función cuando inicialices todo (por ejemplo, al final del onload del archivo)
+    crearResultadoCheckboxes();
+
+
+    // Función para obtener la explicación de los valores AB
+    function getABExplanation(value) {
+      let explanation = ABValues.hasOwnProperty(value) ? ABValues[value] : `${value}: Desconocido`;
+      if (explanation.startsWith("OUT")) {
+        explanation = `<span class="out-red">${explanation}</span>`;
+      }
+      return explanation;
+    }
+
+    function convertToMM(coordinate, totalLengthInUnits, totalLengthInMM) {
+      return (coordinate / totalLengthInUnits) * totalLengthInMM;
+    }
+
+
+    // Función para determinar el estado de las coordenadas
+    function getStatus(eje, estado, valor) {
+      const reglas = {
+        "0": { x: [[0, 227, "OUT"], [228, 621, "IN"], [622, 848, "OUT"]], y: [[0, 187, "OUT"], [188, 323, "IN"], [324, 512, "OUT"]] },
+        "1": { x: [[0, 227, "OUT"], [228, 621, "IN"], [622, 848, "OUT"]], y: [[0, 164, "OUT"], [165, 346, "IN"], [347, 512, "OUT"]] },
+        "2": { x: [[0, 318, "OUT"], [319, 531, "IN"], [532, 848, "OUT"]], y: [[0, 255, "OUT"], [256, 323, "IN"], [324, 512, "OUT"]] },
+        "3": { x: [[0, 318, "OUT"], [319, 531, "IN"], [532, 848, "OUT"]], y: [[0, 187, "OUT"], [188, 256, "IN"], [257, 512, "OUT"]] },
+        "4": { x: [[0, 318, "OUT"], [319, 531, "IN"], [532, 848, "OUT"]], y: [[0, 255, "OUT"], [256, 323, "IN"], [324, 512, "OUT"]] },
+        "5": { x: [[0, 318, "OUT"], [319, 531, "IN"], [532, 848, "OUT"]], y: [[0, 187, "OUT"], [188, 256, "IN"], [257, 512, "OUT"]] }
+      };
+      const zonas = reglas[estado]?.[eje];
+      if (!zonas) return ["-", "neutral"];
+      for (let [min, max, label] of zonas) {
+        if (valor >= min && valor <= max) {
+          return [`${label}<br><small>(${min} a ${max})</small>`, label === "IN" ? "in" : "out"];
+        }
+      }
+      return ["-", "neutral"];
+    }
+
+    // Función para crear las casillas de verificación de las columnas
+    function createColumnCheckboxes(table) {
+      const container = document.getElementById('columnToggles');
+      container.innerHTML = '';
+      columnNames.forEach((name, index) => {
+        const label = document.createElement('label');
+        label.innerHTML = `<input type="checkbox" checked data-column="${index}"> ${name}`;
+        container.appendChild(label);
+      });
+
+      $('#columnToggles input[type="checkbox"]').on('change', function () {
+        const colIndex = $(this).data('column');
+        const visible = $(this).is(':checked');
+        table.column(colIndex).visible(visible);
+      });
+    }
+
+    // Función para manejar la carga del archivo
+    document.getElementById('fileInput').addEventListener('change', function (e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+
+      reader.onload = function (e) {
+        const lines = e.target.result.split('\n');
+        const rows = [];
+
+        // Procesa cada línea del archivo
+        lines.forEach(line => {
+          if (!line.trim()) return;
+          const [ident, posStr, rawEstado] = line.split(':');
+          const [xStr, yStr] = posStr.split(',');
+          const x = parseInt(xStr), y = parseInt(yStr);
+          const estado = estadoMap[rawEstado] || rawEstado;
+
+          //const hData = line.match(/H\/([^:]+):/)?.[1].split('/') || [];
+          const hData = line.match(/H\/([^/]+(?:\/[^/]+)*)\s*\/\//)?.[1].split('/') || [];
+          const vData = line.match(/V\/([^/]+(?:\/[^/]+)*)\s*\/\//)?.[1].split('/') || [];
+          //const vData = line.match(/V\/([^:]+):/)?.[1].split('/') || [];
+
+          function formatCamDataColored(camString) {
+            if (!camString) return '';
+
+            const parts = camString.split(',');
+
+            const num = parts[0] || '';
+            const estado = parts[1]?.trim() || '';
+            const valor1 = parts[2] || '';
+            const valor2 = parts[3] || '';
+            const temp = parts[4] || '';
+
+            const colorClase = {
+              NC: 'nc',
+              O: 'o',
+              I: 'i',
+              T: 't',
+              D: 'd'
+            }[estado] || '';
+
+            // Intenta extraer TC del último valor si está embebido
+            let extraTemp = '';
+            if (!temp && parts.length >= 4 && parts[3].includes('TC:')) {
+              extraTemp = parts[3];
+            } else if (!temp && parts.length >= 5 && parts[4].includes('TC:')) {
+              extraTemp = parts[4];
+            } else if (temp.includes('TC:')) {
+              extraTemp = temp;
+            }
+
+            return `${num} <span class="${colorClase}">${estado}</span> de ${valor1 || '-'} ${extraTemp}`;
+          }
+
+
+
+          const h1 = hData[0] ? formatCamDataColored(hData[0]) : '';
+          const h2 = hData[1] ? formatCamDataColored(hData[1]) : '';
+          const h3 = hData[2] ? formatCamDataColored(hData[2]) : '';
+
+          const v1 = vData[0] ? formatCamDataColored(vData[0]) : '';
+          const v2 = vData[1] ? formatCamDataColored(vData[1]) : '';
+          const v3 = vData[2] ? formatCamDataColored(vData[2]) : '';
+
+          const gMatch = line.match(/:G,([^:]+)/);
+          const temps = line.match(/TEMPS:(\d+)/);
+          const tempsLaser = line.match(/TEMPS_LASER:(\d+)/);
+          const gData = gMatch ? gMatch[1] : '';
+          const tempsVal = temps ? parseInt(temps[1]) : '';
+          const laserVal = tempsLaser ? parseInt(tempsLaser[1]) : '';
+          const estatLaser = line.match(/Estat_Laser:(\d+)/);
+          const estatLaserVal = estatLaser ? parseInt(estatLaser[1]) : '';
+
+
+          let a = '', b = '', aExplain = '', bExplain = '';
+          if (gData) {
+            const parts = gData.split(',');
+            a = parts[0]; b = parts[1];
+            aExplain = `${a}<br><small>${getABExplanation(a)}</small>`;
+            bExplain = `${b}<br><small>${getABExplanation(b)}</small>`;
+
+          }
+
+
+
+          const camH1 = hData[0]?.split(',')[0]?.trim() || 'empty';
+          const camH2 = hData[1]?.split(',')[0]?.trim() || 'empty';
+          const camH3 = hData[2]?.split(',')[0]?.trim() || 'empty';
+
+          const camV1 = vData[0]?.split(',')[0]?.trim() || 'empty';
+          const camV2 = vData[1]?.split(',')[0]?.trim() || 'empty';
+          const camV3 = vData[2]?.split(',')[0]?.trim() || 'empty';
+
+          const camarasTotales = [camH1, camH2, camH3, camV1, camV2, camV3]
+            .filter(cam => cam !== 'empty')
+            .join(',');
+
+
+
+
+
+          // Mantén el conteo con getStatus (si lo quieres para mostrar o estadísticas)
+          const [horizontalStatus, horizontalClass] = getStatus('x', rawEstado, x);
+          const [verticalStatus, verticalClass] = getStatus('y', rawEstado, y);
+
+          // Define función para detectar OUT (puedes declararla arriba en el script)
+          function isOutAB(value) {
+            const n = parseInt(value);
+            return [1, 2, 3, 5, 9].includes(n);
+          }
+
+          // Usa los valores reales (a y b) para decidir color del identificador
+          const isOutH = isOutAB(a);
+          const isOutV = isOutAB(b);
+          let identColor = (isOutH || isOutV) ? "red" : "green";
+
+
+          // Al cargar y construir fila, en lugar de poner solo texto identificador:
+          const identHtml = `<span style="color: ${identColor}">${ident}</span>`;
+
+
+          const identColored = `
+<a href="pista_grande.html?x=${x}&y=${y}&estado=${rawEstado}&camaras=${encodeURIComponent(camarasTotales)}" 
+   target="_blank" 
+   style="color: ${identColor}; font-weight: bold; text-decoration: none;">
+  ${ident}
+</a>`;
+
+
+          // URL que usaremos para ambas vistas
+          const mapaUrl = `pista_grande.html?x=${encodeURIComponent(x)}&y=${encodeURIComponent(y)}&estado=${encodeURIComponent(rawEstado)}&camaras=${encodeURIComponent(camarasTotales)}`;
+          const mapaBtn = `<button class="ver-mapa" data-url="${mapaUrl}">Ver mapa</button>`;
+
+          // Iframe SOLO cuando el checkbox esté desmarcado (lo guardamos oculto en datos)
+          const mapaIframe = `<iframe 
+  src="pista_.html?x=${encodeURIComponent(x)}&y=${encodeURIComponent(y)}&estado=${encodeURIComponent(rawEstado)}&camaras=${encodeURIComponent(camarasTotales)}" 
+  width="300" height="190" 
+  style="border:1px solid #ccc;">
+</iframe>`;
+
+          // En la celda "Mapa" (columna visible) podemos poner vacío; el render la rellena:
+          const row = [
+            identColored,
+            "",                 // ← la columna visible "Mapa" se rellena vía render según el checkbox
+            x, y, estado,
+            h1, h2, h3, v1, v2, v3,
+            gData, aExplain, bExplain,
+            tempsVal, laserVal,
+            `<span class="${verticalClass}">${verticalStatus}</span>`,
+            `<span class="${horizontalClass}">${horizontalStatus}</span>`,
+            estatLaserVal,
+            mapaBtn,           // ← __map_btn (oculta)
+            mapaIframe,        // ← __map_iframe (oculta)
+            identColor         // ← __color (oculta)
+          ];
+          rows.push(row);
+
+        });
+
+        // Si la tabla ya está inicializada, actualiza los datos
+        if (dataTable) {
+          dataTable.clear().rows.add(rows).draw();
+        } else {
+          // Si la tabla no está inicializada, la crea
+          dataTable = $('#dataTable').DataTable({
+            data: rows,
+            columns: columnNames.map(name => ({ title: name })),
+            autoWidth: false,
+            lengthMenu: [[10, 25, 50, 100, 1000, 10000, 20000], ['10', '25', '50', '100', '1000', '10000', '20000']],
+            pageLength: 50,           // ↓ menos DOM = más fluidez
+            ordering: false,
+            processing: true,         // spinner y mejores repaints
+            deferRender: true,        // ← clave para rendimiento
+            columnDefs: [
+              // Render dinámico de la columna visible "Mapa" (índice 1)
+              {
+                targets: 1,
+                render: function (_data, _type, row) {
+                  const idxMapBtn = columnNames.indexOf("__map_btn");
+                  const idxMapIframe = columnNames.indexOf("__map_iframe");
+                  return usarBotonMapa ? row[idxMapBtn] : row[idxMapIframe];
+                }
+              },
+              // Ocultar columnas internas
+              { targets: columnNames.indexOf("__map_btn"), visible: false },
+              { targets: columnNames.indexOf("__map_iframe"), visible: false },
+              { targets: columnNames.indexOf("__color"), visible: false }
+            ]
+          });
+
+
+          // Redibuja los encabezados cuando se aplica un filtro
+          dataTable.on('draw', function () {
+            const visibleRows = dataTable.rows({ filter: 'applied' }).data().toArray();
+
+            /// Declarar filtros se actualicen una vez filtres por primera vez
+            updateCameraHeaderCounts(visibleRows);
+            updateResultadoCounts(visibleRows);
+            updateTempsStats(visibleRows);
+          });
+
+          // Crea los controles de visibilidad de columnas
+          createColumnCheckboxes(dataTable);
+        }
+      };
+
+      // Lee el archivo como texto
+      reader.readAsText(file);
+    });
+
+
+    // ✅ NUEVO filtro por color basado en la columna oculta "__color"
+    $.fn.dataTable.ext.search.push(function (settings, data) {
+      const showGreen = $('#filterGreen').is(':checked');
+      const showRed = $('#filterRed').is(':checked');
+
+      const color = (data[columnNames.length - 1] || '').trim(); // "__color"
+
+      if (!showGreen && !showRed) return false;
+      return (color === 'green' && showGreen) || (color === 'red' && showRed);
+    });
+
+
+
+    $('#filterGreen, #filterRed').on('change', drawDebounced);
+
+
+    // === Cámaras posibles ===
+    const camNumbersH = [8, 9, 10, 11, 12, 13, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43];
+    const camNumbersV = [0, 2, 3, 4, 5, 7, 14, 16, 17, 18, 19, 21];
+
+    const allCamValuesH1 = [...camNumbersH.map(String), 'empty'];
+    const allCamValuesV1 = [...camNumbersV.map(String), 'empty'];
+
+    let activeCamsH1 = new Set();
+    let activeCamsV1 = new Set();
+
+    const camCheckboxesContainerH = document.getElementById('camCheckboxesH');
+    const camCheckboxesContainerV = document.getElementById('camCheckboxesV');
+
+    function crearCheckboxVacio(id, texto, contenedor) {
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.id = id;
+      checkbox.addEventListener('change', () => {
+        drawDebounced();
+
+      });
+
+      const label = document.createElement('label');
+      label.style.marginRight = '10px';
+      label.appendChild(checkbox);
+      label.appendChild(document.createTextNode(` ${texto} vacío`));
+      contenedor.appendChild(label);
+
+      return checkbox;
+    }
+
+    const checkboxH1 = crearCheckboxVacio('filterH1', 'H1', camCheckboxesContainerH);
+    const checkboxH2 = crearCheckboxVacio('filterH2', 'H2', camCheckboxesContainerH);
+    const checkboxH3 = crearCheckboxVacio('filterH3', 'H3', camCheckboxesContainerH);
+
+    const checkboxV1 = crearCheckboxVacio('filterV1', 'V1', camCheckboxesContainerV);
+    const checkboxV2 = crearCheckboxVacio('filterV2', 'V2', camCheckboxesContainerV);
+    const checkboxV3 = crearCheckboxVacio('filterV3', 'V3', camCheckboxesContainerV);
+
+    // === Generar checkboxes H sin 'empty' ===
+    allCamValuesH1
+      .filter(val => val !== 'empty')  // <-- excluye 'empty'
+      .forEach(val => {
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.value = val;
+        checkbox.checked = false;
+        checkbox.addEventListener('change', () => {
+          if (checkbox.checked) activeCamsH1.add(val);
+          else activeCamsH1.delete(val);
+          drawDebounced();
+        });
+
+        const label = document.createElement('label');
+        label.style.marginRight = '10px';
+        label.appendChild(checkbox);
+        label.appendChild(document.createTextNode(` ${val}`));
+        camCheckboxesContainerH.appendChild(label);
+      });
+
+    // === Generar checkboxes V sin 'empty' ===
+    allCamValuesV1
+      .filter(val => val !== 'empty')  // <-- excluye 'empty'
+      .forEach(val => {
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.value = val;
+        checkbox.checked = false;
+        checkbox.addEventListener('change', () => {
+          if (checkbox.checked) activeCamsV1.add(val);
+          else activeCamsV1.delete(val);
+          drawDebounced();
+        });
+
+        const label = document.createElement('label');
+        label.style.marginRight = '10px';
+        label.appendChild(checkbox);
+        label.appendChild(document.createTextNode(` ${val}`));
+        camCheckboxesContainerV.appendChild(label);
+      });
+
+
+    // === Checkbox maestro H ===
+    document.getElementById('masterCheckboxH').addEventListener('change', function () {
+      const checked = this.checked;
+      activeCamsH1.clear();
+      document.querySelectorAll('#camCheckboxesH input[type="checkbox"]').forEach(cb => {
+        cb.checked = checked;
+        if (checked) activeCamsH1.add(cb.value);
+      });
+      drawDebounced();
+    });
+
+    // === Checkbox maestro V ===
+    document.getElementById('masterCheckboxV').addEventListener('change', function () {
+      const checked = this.checked;
+      activeCamsV1.clear();
+      document.querySelectorAll('#camCheckboxesV input[type="checkbox"]').forEach(cb => {
+        cb.checked = checked;
+        if (checked) activeCamsV1.add(cb.value);
+      });
+      drawDebounced();
+    });
+
+    // === Filtro DataTable ===
+
+    $.fn.dataTable.ext.search.push(function (settings, data, dataIndex) {
+      const extractCam = (html) => {
+        if (!html || html.trim().toLowerCase() === 'empty') {
+          return 'empty';
+        }
+        const match = html.trim().match(/^(\d+)/);
+        return match ? match[1] : 'empty';
+      };
+
+      // Obtener cámaras individuales
+      const cams = {
+        H1: extractCam(data[5]),
+        H2: extractCam(data[6]),
+        H3: extractCam(data[7]),
+        V1: extractCam(data[8]),
+        V2: extractCam(data[9]),
+        V3: extractCam(data[10])
+      };
+
+      // Filtros seleccionados
+      const selectedH = Array.from(activeCamsH1 || []);
+      const selectedV = Array.from(activeCamsV1 || []);
+
+      // Checkboxes de vacío individuales (asegúrate que estén definidos en tu HTML y JS)
+      const filterEmpty = {
+        H1: checkboxH1.checked,
+        H2: checkboxH2.checked,
+        H3: checkboxH3.checked,
+        V1: checkboxV1.checked,
+        V2: checkboxV2.checked,
+        V3: checkboxV3.checked,
+      };
+
+      // Para cada cámara con filtro vacío activo, la cámara debe ser 'empty'
+      for (const camKey in filterEmpty) {
+        if (filterEmpty[camKey] && cams[camKey] !== 'empty') {
+          return false; // Filtrar fila si esa cámara NO está vacía
+        }
+      }
+
+      // Array de cámaras H y V para filtro normal
+      const camsH = [cams.H1, cams.H2, cams.H3];
+      const camsV = [cams.V1, cams.V2, cams.V3];
+
+      // Función para validar si todos los seleccionados están en las cámaras
+      const containsAll = (selected, cams) =>
+        selected.every(sel => cams.includes(sel));
+
+      // Validar selección normal
+      const shouldDisplay = containsAll(selectedH, camsH) && containsAll(selectedV, camsV);
+
+      return shouldDisplay;
+    });
+
+
+    ///////////////////////////////////////
+
+    // Contenedores para los checkboxes de cada cámara
+    const camCheckboxesContainerH1 = document.getElementById('camCheckboxesH1');
+    const camCheckboxesContainerH2 = document.getElementById('camCheckboxesH2');
+    const camCheckboxesContainerH3 = document.getElementById('camCheckboxesH3');
+    const camCheckboxesContainerV1 = document.getElementById('camCheckboxesV1');
+    const camCheckboxesContainerV2 = document.getElementById('camCheckboxesV2');
+    const camCheckboxesContainerV3 = document.getElementById('camCheckboxesV3');
+
+    // Establecemos sets para filtrar cada cámara
+    const activeFilterH1 = new Set();
+    const activeFilterH2 = new Set();
+    const activeFilterH3 = new Set();
+    const activeFilterV1 = new Set();
+    const activeFilterV2 = new Set();
+    const activeFilterV3 = new Set();
+    const activeFilterF = new Set();  // Agregamos un set para "F"
+
+    // Lista de valores a filtrar: 'NC', 'I', 'O', 'D', 'T', 'F'
+    const filterValues = ['NC', 'I', 'O', 'D', 'T', 'F'];
+
+    // === Generar checkboxes para las cámaras horizontales (H1, H2, H3) ===
+    const generateCheckboxes = (container, activeFilter, ccFilters, cameraKey) => {
+      filterValues.forEach(val => {
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.value = val;
+        checkbox.checked = false;
+        checkbox.addEventListener('change', () => {
+          if (checkbox.checked) {
+            activeFilter.add(val);
+          } else {
+            activeFilter.delete(val);
+          }
+          drawDebounced();
+        });
+
+        const label = document.createElement('label');
+        label.style.marginRight = '10px';
+        label.appendChild(checkbox);
+        label.appendChild(document.createTextNode(val));
+        container.appendChild(label);
+      });
+
+      // CC checkbox (valor <= 100)
+      const ccCheckbox = document.createElement('input');
+      ccCheckbox.type = 'checkbox';
+      ccCheckbox.checked = false;
+      ccCheckbox.addEventListener('change', () => {
+        ccFilters[cameraKey] = ccCheckbox.checked;
+        drawDebounced();
+      });
+
+      const ccLabel = document.createElement('label');
+      ccLabel.style.marginRight = '10px';
+      ccLabel.appendChild(ccCheckbox);
+      ccLabel.appendChild(document.createTextNode('CC'));
+      container.appendChild(ccLabel);
+    };
+
+    // Objeto para filtros de "close call" (cc)
+    const ccFilters = {
+      H1: false,
+      H2: false,
+      H3: false,
+      V1: false,
+      V2: false,
+      V3: false
+    };
+
+    // Generar checkboxes para cada cámara
+    generateCheckboxes(camCheckboxesContainerH1, activeFilterH1, ccFilters, 'H1');
+    generateCheckboxes(camCheckboxesContainerH2, activeFilterH2, ccFilters, 'H2');
+    generateCheckboxes(camCheckboxesContainerH3, activeFilterH3, ccFilters, 'H3');
+    generateCheckboxes(camCheckboxesContainerV1, activeFilterV1, ccFilters, 'V1');
+    generateCheckboxes(camCheckboxesContainerV2, activeFilterV2, ccFilters, 'V2');
+    generateCheckboxes(camCheckboxesContainerV3, activeFilterV3, ccFilters, 'V3');
+
+    // Función para obtener el valor total de una cámara
+    const getTotalValue = (camString) => {
+      if (!camString) return Infinity;
+      const match = camString.match(/de\s+(\d+)/i);
+      return match ? parseInt(match[1], 10) : Infinity;
+    };
+
+    // Función de filtrado extendido para DataTable
+    $.fn.dataTable.ext.search.push(function (settings, data, dataIndex) {
+      // Obtener las cámaras de la fila (como en tu ejemplo anterior)
+      const camsH1 = [data[5]]; // Cámara H1
+      const camsH2 = [data[6]]; // Cámara H2
+      const camsH3 = [data[7]]; // Cámara H3
+      const camsV1 = [data[8]]; // Cámara V1
+      const camsV2 = [data[9]]; // Cámara V2
+      const camsV3 = [data[10]]; // Cámara V3
+
+      // Función para extraer los valores de la cámara (NC, I, O, D, T, F) de una cadena
+      const extractCameraValues = (camString) => {
+        if (!camString) return [];
+
+        // Limpiar espacios extra y asegurar que el formato sea consistente
+        camString = camString.trim().replace(/\s+/g, " "); // Eliminar espacios innecesarios
+
+        // Buscar los valores relevantes (NC, I, O, D, T, F) en la cadena
+        const matches = camString.match(/(NC|I|O|D|T|F)/g);
+
+        return matches || []; // Si no hay coincidencias, devolvemos un array vacío
+      };
+
+      // Extraer los valores de cada cámara (H1, H2, H3, V1, V2, V3)
+      const valuesH1 = extractCameraValues(camsH1[0]);
+      const valuesH2 = extractCameraValues(camsH2[0]);
+      const valuesH3 = extractCameraValues(camsH3[0]);
+      const valuesV1 = extractCameraValues(camsV1[0]);
+      const valuesV2 = extractCameraValues(camsV2[0]);
+      const valuesV3 = extractCameraValues(camsV3[0]);
+
+      // Filtrar si hay un valor de "NC" y no tiene "D" asociado
+      const containsOnlyNC = (values) => {
+        return values.includes('NC') && !values.includes('D');
+      };
+
+      // Comprobar si las cámaras contienen los valores seleccionados en los checkboxes
+      const containsSelectedH1 = activeFilterH1.size === 0 || valuesH1.some(val => activeFilterH1.has(val));
+      const containsSelectedH2 = activeFilterH2.size === 0 || valuesH2.some(val => activeFilterH2.has(val));
+      const containsSelectedH3 = activeFilterH3.size === 0 || valuesH3.some(val => activeFilterH3.has(val));
+      const containsSelectedV1 = activeFilterV1.size === 0 || valuesV1.some(val => activeFilterV1.has(val));
+      const containsSelectedV2 = activeFilterV2.size === 0 || valuesV2.some(val => activeFilterV2.has(val));
+      const containsSelectedV3 = activeFilterV3.size === 0 || valuesV3.some(val => activeFilterV3.has(val));
+
+      // Filtrar las cámaras según el tipo de valor seleccionado (NC, D, T)
+      if (activeFilterH1.has('NC') && !containsOnlyNC(valuesH1)) return false;
+      if (activeFilterH2.has('NC') && !containsOnlyNC(valuesH2)) return false;
+      if (activeFilterH3.has('NC') && !containsOnlyNC(valuesH3)) return false;
+      if (activeFilterV1.has('NC') && !containsOnlyNC(valuesV1)) return false;
+      if (activeFilterV2.has('NC') && !containsOnlyNC(valuesV2)) return false;
+      if (activeFilterV3.has('NC') && !containsOnlyNC(valuesV3)) return false;
+
+      // Si "T" está marcado, solo mostramos las filas que contengan exclusivamente "T"
+      const onlyTInH1 = activeFilterH1.has('T') && valuesH1.every(val => val === 'T');
+      const onlyTInH2 = activeFilterH2.has('T') && valuesH2.every(val => val === 'T');
+      const onlyTInH3 = activeFilterH3.has('T') && valuesH3.every(val => val === 'T');
+      const onlyTInV1 = activeFilterV1.has('T') && valuesV1.every(val => val === 'T');
+      const onlyTInV2 = activeFilterV2.has('T') && valuesV2.every(val => val === 'T');
+      const onlyTInV3 = activeFilterV3.has('T') && valuesV3.every(val => val === 'T');
+
+      // Si "T" está marcado, solo mostramos las filas que tengan exclusivamente ese valor
+      if (activeFilterH1.has('T') && !onlyTInH1) return false;
+      if (activeFilterH2.has('T') && !onlyTInH2) return false;
+      if (activeFilterH3.has('T') && !onlyTInH3) return false;
+      if (activeFilterV1.has('T') && !onlyTInV1) return false;
+      if (activeFilterV2.has('T') && !onlyTInV2) return false;
+      if (activeFilterV3.has('T') && !onlyTInV3) return false;
+
+      // Marcar close call cualquier bola con cálculo inferior o igual a 100mm / 10cm
+      if (ccFilters.H1 && getTotalValue(camsH1[0]) > 100) return false;
+      if (ccFilters.H2 && getTotalValue(camsH2[0]) > 100) return false;
+      if (ccFilters.H3 && getTotalValue(camsH3[0]) > 100) return false;
+      if (ccFilters.V1 && getTotalValue(camsV1[0]) > 100) return false;
+      if (ccFilters.V2 && getTotalValue(camsV2[0]) > 100) return false;
+      if (ccFilters.V3 && getTotalValue(camsV3[0]) > 100) return false;
+
+      // Si no hay filtros activos o si las cámaras cumplen con los filtros seleccionados, la fila se muestra
+      return containsSelectedH1 && containsSelectedH2 && containsSelectedH3 && containsSelectedV1 && containsSelectedV2 && containsSelectedV3;
+    });
+
+
+    //////////////////////////////////////////
+
+
+    function updateCameraHeaderCounts(rows) {
+      const camIndices = {
+        5: 'Cámara H 1',
+        6: 'Cámara H 2',
+        7: 'Cámara H 3',
+        8: 'Cámara V 1',
+        9: 'Cámara V 2',
+        10: 'Cámara V 3'
+      };
+
+      const counts = {};
+      const timesStats = {};
+      const noTCCount = {}; // Para contar las cámaras sin TC
+
+      // Inicializar contadores
+      for (let idx in camIndices) {
+        counts[idx] = { I: 0, O: 0, NC: 0, T: 0, D: 0, total: 0, T_sin_tiempo: 0, vacio: 0 };
+        timesStats[idx] = { values: [], min: null, max: null, avg: null, count: 0 };
+        noTCCount[idx] = 0;  // Inicializamos el contador de cámaras sin TC
+      }
+
+      rows.forEach(row => {
+        Object.keys(camIndices).forEach(idx => {
+          const html = row[idx];
+
+          if (!html || html.trim() === '') {
+            counts[idx].vacio++;
+            return;
+          }
+
+          // Contar clases
+          const matchClass = html.match(/class="([^"]+)"/);
+          const hasTC = html.includes('TC:');
+          let isT = false;
+
+          if (matchClass) {
+            const cls = matchClass[1].toUpperCase();
+            if (['I', 'O', 'NC', 'T', 'D'].includes(cls)) {
+              counts[idx][cls]++;
+              counts[idx].total++;
+            }
+            if (cls === 'T') {
+              isT = true;
+            }
+          }
+
+          // Extraer y validar TC solo si es >= 0
+          const matchTime = html.match(/TC:([0-9.]+)/i);
+          if (matchTime) {
+            const timeNum = parseFloat(matchTime[1]);
+            if (!isNaN(timeNum) && timeNum >= 0) {
+              timesStats[idx].values.push(timeNum);
+            }
+          } else if (isT) {
+            // Si es clase T pero no tiene TC válido
+            counts[idx].T_sin_tiempo++;
+          } else {
+            // Si no tiene TC, incrementar el contador de no TC
+            noTCCount[idx]++;
+          }
+        });
+      });
+
+      // Calcular min, max, avg
+      Object.keys(timesStats).forEach(idx => {
+        const vals = timesStats[idx].values;
+        if (vals.length > 0) {
+          timesStats[idx].min = Math.min(...vals);
+          timesStats[idx].max = Math.max(...vals);
+          const sum = vals.reduce((a, b) => a + b, 0);
+          timesStats[idx].avg = (sum / vals.length).toFixed(2);
+          timesStats[idx].count = vals.length;
+        } else {
+          timesStats[idx].min = '-';
+          timesStats[idx].max = '-';
+          timesStats[idx].avg = '-';
+          timesStats[idx].count = 0;
+        }
+      });
+
+      // Actualizar encabezados
+      const thElements = document.querySelectorAll('#dataTable thead tr:first-child th');
+      Object.keys(camIndices).forEach(idx => {
+        const baseText = camIndices[idx];
+        const c = counts[idx];
+        const t = timesStats[idx];
+        const noTC = noTCCount[idx];  // Obtener la cantidad de cámaras sin TC
+
+        // Crear HTML para los dos botones en el encabezado
+        const leftButtonContent = `I:${c.I} O:${c.O} NC:${c.NC} T:${c.T} D:${c.D} <br> TOTAL:${c.total}</span>`;
+        const rightButtonContent = `MIN: ${t.min} MAX: ${t.max} <br> AVG: ${t.avg} T_T: ${t.count}` + `T: ${c.T_sin_tiempo} Vacío: ${c.vacio}` + `Sin TC: ${noTC}</span>`;
+
+        // Crear el contenedor que divide el espacio en dos botones
+        const buttonContainer = `<div class="button-container">
+                              <button class="left-button" onclick="toggleInfo(${idx}, 'left')">Info</button>
+                              <button class="right-button" onclick="toggleInfo(${idx}, 'right')">T</button>
+                            </div>`;
+
+        // Crear los contenedores para la información de cada botón
+        const infoContainerLeft = `<div id="info-left-${idx}" class="hidden-info" style="display: none;">${leftButtonContent}</div>`;
+        const infoContainerRight = `<div id="info-right-${idx}" class="hidden-info" style="display: none;">${rightButtonContent}</div>`;
+
+        // Actualizar el encabezado con los botones y la información
+        if (thElements[idx]) {
+          thElements[idx].innerHTML = baseText + buttonContainer + infoContainerLeft + infoContainerRight;
+        }
+      });
+    }
+
+    // Función para alternar la visibilidad de la información
+    function toggleInfo(idx, side) {
+      const infoContainer = document.getElementById(`info-${side}-${idx}`);
+      if (infoContainer) {
+        infoContainer.style.display = (infoContainer.style.display === 'none') ? 'block' : 'none';
+      }
+    }
+
+
+
+
+    function updateResultadoCounts(rows) {
+      const resultadoIndices = {
+        12: 'Resultado H',
+        13: 'Resultado V'
+      };
+
+      const counts = {};
+      Object.keys(resultadoIndices).forEach(idx => {
+        counts[idx] = {
+          OUT: 0,
+          IN: 0,
+          laser: { OUT: 0, IN: 0 },  // laser ahora es un objeto
+          noAplica: 0,
+          total: 0
+        };
+      });
+
+      rows.forEach((row, i) => {
+        Object.keys(resultadoIndices).forEach(idx => {
+          const cellContent = row[idx];
+
+          if (typeof cellContent === 'string') {
+            const contentUpper = cellContent.toUpperCase();
+
+            if (contentUpper.includes('OUT')) {
+              counts[idx].OUT++;
+              counts[idx].total++;
+            } else if (contentUpper.includes('IN')) {
+              counts[idx].IN++;
+              counts[idx].total++;
+            } else if (contentUpper.includes('NO APLICA')) {  // Detectamos No aplica
+              counts[idx].noAplica++;
+              counts[idx].total++;
+            }
+
+            // Extraemos el número al principio
+            const match = cellContent.match(/^(-?\d+)/);
+            const cellNumber = match ? Number(match[1]) : NaN;
+
+            if (cellNumber === 5 || cellNumber === 9) {
+              counts[idx].laser.OUT++;
+            } else if (cellNumber === -5) {
+              counts[idx].laser.IN++;
+            }
+          }
+        });
+      });
+
+      // Actualizar encabezados
+      const thElements = document.querySelectorAll('#dataTable thead tr:first-child th');
+      Object.keys(resultadoIndices).forEach(idx => {
+        const baseText = resultadoIndices[idx];
+        const c = counts[idx];
+
+        // Crear HTML para el botón
+        const buttonContainer = `<div class="button-container">
+                              <button class="info-button" onclick="toggleResultadoInfo(${idx})">Info</button>
+                            </div>`;
+
+        // Contenido de la información para mostrar al hacer clic
+        const infoContent = `
+      <div id="info-${idx}" class="hidden-info" style="display: none;">
+        OUT: ${c.OUT} <br>
+        IN: ${c.IN} <br>
+        LASER.OUT: ${c.laser.OUT} <br>
+        LASER.IN: ${c.laser.IN} <br>
+        NO APLICA: ${c.noAplica} <br>
+        TOTAL: ${c.total}
+      </div>
+    `;
+
+        // Actualizar el encabezado con el botón y la información
+        if (thElements[idx]) {
+          thElements[idx].innerHTML = baseText + buttonContainer + infoContent;
+        }
+      });
+    }
+
+    // Función para alternar la visibilidad de la información
+    function toggleResultadoInfo(idx) {
+      const infoContainer = document.getElementById(`info-${idx}`);
+      if (infoContainer) {
+        infoContainer.style.display = (infoContainer.style.display === 'none') ? 'block' : 'none';
+      }
+    }
+
+
+
+    function updateTempsStats(rows) {
+      const tempIndices = {
+        14: 'TEMPS',
+        15: 'TEMPS_LASER'
+      };
+
+      const stats = {};
+      Object.keys(tempIndices).forEach(idx => {
+        stats[idx] = {
+          values: [],
+          min: null,
+          max: null,
+          sum: 0,
+          avg: 0,
+          empty: 0 // campos vacíos
+        };
+      });
+
+      rows.forEach((row, i) => {
+        Object.keys(tempIndices).forEach(idx => {
+          const cell = row[idx];
+
+          // Contar vacíos explícitamente
+          if (!cell || cell === '') {
+            stats[idx].empty++;
+            return;
+          }
+
+          const num = parseFloat(cell);
+          if (!isNaN(num)) {
+            stats[idx].values.push(num);
+          }
+        });
+      });
+
+      // Calcular estadísticas
+      Object.keys(stats).forEach(idx => {
+        const values = stats[idx].values;
+        if (values.length > 0) {
+          stats[idx].min = Math.min(...values);
+          stats[idx].max = Math.max(...values);
+          stats[idx].sum = values.reduce((a, b) => a + b, 0);
+          stats[idx].avg = (stats[idx].sum / values.length).toFixed(2);
+        }
+      });
+
+      // Actualizar encabezados
+      const thElements = document.querySelectorAll('#dataTable thead tr:first-child th');
+      Object.keys(tempIndices).forEach(idx => {
+        const baseText = tempIndices[idx];
+        const s = stats[idx];
+        const totalCount = s.values.length;
+
+        // Crear HTML para el botón "Mostrar Info"
+        const buttonContainer = `<div class="button-container">
+                              <button class="info-button" onclick="toggleTempsInfo(${idx})">Info</button>
+                            </div>`;
+
+        // Contenido de la información para mostrar al hacer clic
+        const infoContent = `
+      <div id="info-${idx}" class="hidden-info" style="display: none;">
+        MIN: ${s.min} <br>
+        MAX: ${s.max} <br>
+        AVG: ${s.avg} <br>
+        TOTAL: ${totalCount} <br>
+        VACÍOS: ${s.empty}
+      </div>
+    `;
+
+        // Actualizar el encabezado con el botón y la información
+        if (thElements[idx]) {
+          thElements[idx].innerHTML = baseText + buttonContainer + infoContent;
+        }
+      });
+    }
+
+    // Función para alternar la visibilidad de la información
+    function toggleTempsInfo(idx) {
+      const infoContainer = document.getElementById(`info-${idx}`);
+      if (infoContainer) {
+        infoContainer.style.display = (infoContainer.style.display === 'none') ? 'block' : 'none';
+      }
+    }
+
+    const filterZones = [
+      { x_min: 610, x_max: 634, y_min: 156, y_max: 355, name: "right baseline" }, //0,2,19,21
+      { x_min: 511, x_max: 534, y_min: 179, y_max: 332, name: "right serve" }, //3,18
+      { x_min: 425, x_max: 634, y_min: 179, y_max: 197, name: "right near singles" }, //26,32,33 
+      { x_min: 425, x_max: 634, y_min: 156, y_max: 174, name: "right near dobles" }, //27,28,29
+      { x_min: 425, x_max: 542, y_min: 247, y_max: 265, name: "right center serve" }, //24,25
+      { x_min: 425, x_max: 634, y_min: 337, y_max: 355, name: "right far dobles" }, //22,40,41
+      { x_min: 425, x_max: 634, y_min: 314, y_max: 332, name: "right far singles" }, //23,36,37
+      { x_min: 216, x_max: 240, y_min: 156, y_max: 355, name: "left baseline" }, //5,7,14,16
+      { x_min: 315, x_max: 339, y_min: 179, y_max: 332, name: "left serve" }, //4,17
+      { x_min: 216, x_max: 423, y_min: 179, y_max: 197, name: "left near singles" }, //9,34,35
+      { x_min: 216, x_max: 423, y_min: 156, y_max: 174, name: "left near dobles" },//8,30,31
+      { x_min: 307, x_max: 423, y_min: 247, y_max: 265, name: "left center serve" }, //10,11
+      { x_min: 216, x_max: 423, y_min: 337, y_max: 355, name: "left far dobles" }, //13,42,43
+      { x_min: 216, x_max: 423, y_min: 314, y_max: 332, name: "left far singles" }, //12,38,39
+      { x_min: 228, x_max: 622, y_min: 188, y_max: 323, name: "single" }, // Nueva zona para Single
+      { x_min: 228, x_max: 622, y_min: 165, y_max: 346, name: "dobles" } // Nueva zona para Dobles
+    ];
+
+    // Generar checkboxes para cada zona
+    const zoneCheckboxesContainer = document.getElementById('zoneFilters');
+
+    // Generar checkboxes de las zonas existentes
+    filterZones.forEach((zone, index) => {
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.value = index;
+      checkbox.checked = (zone.name === 'single' || zone.name === 'dobles' || zone.name === 'resto'); // Marcar "single", "dobles" y "resto" por defecto
+      checkbox.addEventListener('change', () => {
+        // Redibujar la tabla cada vez que el filtro cambie
+        drawDebounced();
+      });
+
+      const label = document.createElement('label');
+      label.style.marginRight = '10px';
+      label.appendChild(checkbox);
+      label.appendChild(document.createTextNode(`${zone.name} (X: ${zone.x_min}-${zone.x_max}, Y: ${zone.y_min}-${zone.y_max})`));
+
+      zoneCheckboxesContainer.appendChild(label);
+    });
+
+    // Agregar el checkbox "resto" para mostrar los botes fuera de las zonas "singles" y "dobles"
+    const restoCheckbox = document.createElement('input');
+    restoCheckbox.type = 'checkbox';
+    restoCheckbox.value = 'resto';
+    restoCheckbox.checked = true; // Por defecto, "resto" está marcado
+    restoCheckbox.addEventListener('change', () => {
+      // Redibujar la tabla cada vez que el filtro cambie
+      drawDebounced();
+    });
+
+    const restoLabel = document.createElement('label');
+    restoLabel.style.marginRight = '10px';
+    restoLabel.appendChild(restoCheckbox);
+    restoLabel.appendChild(document.createTextNode('Resto (fuera de singles y dobles)'));
+
+    zoneCheckboxesContainer.appendChild(restoLabel);
+
+    // Actualizar el filtro de DataTable con las zonas seleccionadas
+    $.fn.dataTable.ext.search.push(function (settings, data, dataIndex) {
+      const x = parseInt(data[2]);  // Coordenada X
+      const y = parseInt(data[3]);  // Coordenada Y
+
+      // Verificar si las coordenadas caen dentro de las zonas seleccionadas
+      const isInSelectedZones = Array.from(document.querySelectorAll('#zoneFilters input[type="checkbox"]:checked'))
+        .map(checkbox => checkbox.value)
+        .some(value => {
+          if (value === 'resto') {
+            // Excluir las zonas de "single" y "dobles" para mostrar "resto"
+            const isInSingle = filterZones.some(zone => zone.name === 'single' && x >= zone.x_min && x <= zone.x_max && y >= zone.y_min && y <= zone.y_max);
+            const isInDobles = filterZones.some(zone => zone.name === 'dobles' && x >= zone.x_min && x <= zone.x_max && y >= zone.y_min && y <= zone.y_max);
+
+            // Si el bote está dentro de "single" o "dobles", no mostrarlo
+            return !(isInSingle || isInDobles);
+          } else {
+            // Comprobar las zonas normales
+            const zone = filterZones[parseInt(value)];
+            return x >= zone.x_min && x <= zone.x_max && y >= zone.y_min && y <= zone.y_max;
+          }
+        });
+
+      return isInSelectedZones;
+    });
+
+    $.fn.dataTable.ext.search.push(function (settings, data, dataIndex) {
+      const resultadoH = (data[12] || '').match(/^(-?\d+)/); // Resultado H
+      const resultadoV = (data[13] || '').match(/^(-?\d+)/); // Resultado V
+
+      const valH = resultadoH ? resultadoH[1] : null;
+      const valV = resultadoV ? resultadoV[1] : null;
+
+      const filtroH = resultadoHActive.size === 0 || (valH !== null && resultadoHActive.has(valH));
+      const filtroV = resultadoVActive.size === 0 || (valV !== null && resultadoVActive.has(valV));
+
+      return filtroH && filtroV;
+    });
+
+    $.fn.dataTable.ext.search.push(function (settings, data, dataIndex) {
+      const estadoLaser = data[18]; // Columna 18 es Estado Laser
+
+      // Si no hay filtros activos, no se filtra por estado laser
+      if (estadoLaserActive.size === 0) return true;
+
+      return estadoLaserActive.has(estadoLaser);
+    });
+
+    // Abrir el modal y cargar el iframe solo al pulsar el botón "Ver mapa"
+    $(document).on('click', '.ver-mapa', function () {
+      const url = $(this).data('url');
+      $('#mapaFrame').attr('src', url);
+      $('#mapaModal').css('display', 'flex'); // mostrar modal
+    });
+
+    // Cerrar modal y limpiar iframe
+    $('#cerrarMapa, #mapaModal').on('click', function (e) {
+      if (e.target.id === 'cerrarMapa' || e.target.id === 'mapaModal') {
+        $('#mapaModal').hide();
+        $('#mapaFrame').attr('src', ''); // vaciar para que no siga cargando
+      }
+    });
+
+
+  </script>
+
+  <button id="backToTop" aria-label="Volver arriba" title="Volver arriba">▲</button>
+
+  <script>
+  (function () {
+    const btn = document.getElementById('backToTop');
+    if (!btn) return;
+    const THRESHOLD = 100;
+    window.addEventListener('scroll', function () {
+      if (window.scrollY > THRESHOLD) btn.classList.add('is-visible');
+      else btn.classList.remove('is-visible');
+    }, { passive: true });
+    btn.addEventListener('click', function (e) {
+      e.preventDefault();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  })();
+</script>
+
+</body>
+
+
+
+
+</html>
